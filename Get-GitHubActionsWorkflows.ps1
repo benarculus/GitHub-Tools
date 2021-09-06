@@ -1,5 +1,13 @@
 <#
-Need intro/help
+.SYNOPSIS
+    List all GitHub Repositories in an Organization and count the number of Actions workflows. https://github.com/benarculus/github-tools/
+
+.PARAMETER OrganizationName
+    Mandatory, provide the name of the GitHub Organization, this is not case sensitive.
+
+.PARAMETER $PATPath
+    Optional, provide the path to your Personal Access Token (PAT). Otherwise the script will prompt for you to enter your PAT. 
+
 #>
 [CmdletBinding()]
     param (
@@ -25,35 +33,29 @@ $pat = {
 # Set the header to be used on GitHub API requests
 $header = @{
     'accept' = 'application/vnd.github.v3+json'
-    'token' = "$pat"
 }
 
 # Set the URI for listing GitHub Repositories in an organization
 $repoUrl = "https://api.github.com/orgs/$OrganizationName/repos"
 
-# Get the full list of all Repositories in the organization
-$repos = Invoke-RestMethod -Uri $repoUrl -Headers $header -Method 'POST'
+# Create the list that will store the results of the GET request used to check for repos with Actions workflows
+$workflowList = @{}
 
-# Maybe not needed - Create a list from the full Repository listing of just the repository names (full_name)
+# Get the full list of all Repositories in the organization
+$repos = Invoke-RestMethod -Uri $repoUrl -Authentication OAuth -Token $pat -Headers $header -Method 'GET'
 
 # Check each repo for Actions workflows
-$repos.full_name | ForEach-Object { 
-    # Store the repo name
-    $output = @{
-        "$_" = @{
-            "workflows" = ""
-        }
-    }
+$repos.name | ForEach-Object { 
 
     # Set the URI for listing GitHub Actions within a repository
     $actionsUrl = "https://api.github.com/repos/$OrganizationName/$_/actions/workflows"
     
     # List the Actions for the repo
-    $actions = Invoke-RestMethod -Uri $actionsUrl -Headers $header -Method 'POST'
+    $actions = Invoke-RestMethod -Uri "$actionsUrl" -Authentication OAuth -Token $pat -Headers $header -Method 'GET'
 
     # Record the count of the Actions workflows
-    Add-Content $output.$_.workflows -Value "$actions.total_count"
+    $workflowList.add($_, $actions.total_count)
 }
 
 # Write the output to the user
-Write-Output -InputObject $output
+Write-Output -InputObject $workflowList
