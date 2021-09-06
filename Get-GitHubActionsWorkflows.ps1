@@ -5,30 +5,15 @@
 .PARAMETER OrganizationName
     Mandatory, provide the name of the GitHub Organization, this is not case sensitive.
 
-.PARAMETER $PATPath
-    Optional, provide the path to your Personal Access Token (PAT). Otherwise the script will prompt for you to enter your PAT. 
-
 #>
 [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [String]$OrganizationName,
-        [Parameter(Mandatory=$false)]
-        [String]$PATPath
+        [String]$OrganizationName
     )
 
 # Securely store the GitHub Personal Access Token (PAT). https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/convertto-securestring?view=powershell-7.1
-$pat = {
-    # Check to see if a PAT path was provided
-    if ($PATPath -ne $null){
-        # If a PAT path was provided, then get the content of the file and store it as a secure string
-        Get-Content -Path $PATPath | ConvertTo-SecureString
-    }
-    else {
-        # Otherwise have the user manually enter their PAT and store it as a secure string
-        Read-Host -Prompt "Enter your PAT:" -AsSecureString      
-    }
-}
+$pat = Read-Host -Prompt "Enter your PAT:" -AsSecureString
 
 # Set the header to be used on GitHub API requests
 $header = @{
