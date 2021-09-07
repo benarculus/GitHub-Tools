@@ -49,21 +49,12 @@ $repos.name | ForEach-Object {
 # Write the output to the user
 Write-Output -InputObject $workflowList
 
-# Make sure the provided path is accessable 
-if ($CSVPath -eq $null) {
+# Try first to use the path provided, if that fails, then catch with creating the file from the working directory
+try {
+    # Convert the hashtable to a PSCustomObject and export as a CSV to the provided path
+    $workflowList | ForEach-Object { [PSCustomObject]$_} | Export-Csv -Path $CSVPath/Repos-with-Actions-Workflows.csv
+}
+catch {
     # Convert the hashtable to a PSCustomObject and export as a CSV to the 
     $workflowList | ForEach-Object { [PSCustomObject]$_} | Export-Csv -Path ./Repos-with-Actions-Workflows.csv
 }
-else {
-    # Make sure the provided path is accessable 
-    $CSVTest = Test-Path -Path $CSVPath -ErrorAction SilentlyContinue
-
-    if ($CSVTest -eq $true) {
-        # Convert the hashtable to a PSCustomObject and export as a CSV to the provided path
-        $workflowList | ForEach-Object { [PSCustomObject]$_} | Export-Csv -Path $CSVPath/Repos-with-Actions-Workflows.csv
-    }
-    else {
-        # Convert the hashtable to a PSCustomObject and export as a CSV to the 
-        $workflowList | ForEach-Object { Select-Object -Property keys,vaules} | Export-Csv -Path ./Repos-with-Actions-Workflows.csv
-    }
-} 
