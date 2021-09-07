@@ -1,17 +1,21 @@
 <#
 .SYNOPSIS
-    List all GitHub Repositories in an Organization and count the number of Actions workflows. https://github.com/benarculus/github-tools/
+    List all GitHub Repositories in an Organization and count the number of Actions workflows. A GitHub Personal Access Token (PAT) is required to run this script. https://github.com/benarculus/github-tools/
 
 .PARAMETER OrganizationName
     Mandatory, provide the name of the GitHub Organization, this is not case sensitive.
 
+.PARAMETER CSVPath
+    Optional, provide a location on where to save the outputs of this script as a CSV file. By default, this will save the CSV file to the running directory.
 #>
 [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
-        [String]$OrganizationName
+        [String]$OrganizationName,
+        [Parameter(Mandatory=$true)]
+        [String]$CSVPath
     )
-
+    
 # Securely store the GitHub Personal Access Token (PAT). https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/convertto-securestring?view=powershell-7.1
 $pat = Read-Host -Prompt "Enter your PAT:" -AsSecureString
 
@@ -23,7 +27,7 @@ $header = @{
 # Set the URI for listing GitHub Repositories in an organization
 $repoUrl = "https://api.github.com/orgs/$OrganizationName/repos"
 
-# Create the list that will store the results of the GET request used to check for repos with Actions workflows
+# Create the hashtable that will store the results of the GET request used to check for repos with Actions workflows
 $workflowList = @{}
 
 # Get the full list of all Repositories in the organization
@@ -44,3 +48,13 @@ $repos.name | ForEach-Object {
 
 # Write the output to the user
 Write-Output -InputObject $workflowList
+
+# Try first to use the path provided, if that fails, then catch with creating the file from the working directory
+try {
+    # Convert the hashtable to a PSCustomObject and export as a CSV to the provided path
+    $workflowList | ForEach-Object { [PSCustomObject]$_} | Export-Csv -Path $CSVPath/Repos-with-Actions-Workflows.csv
+}
+catch {
+    # Convert the hashtable to a PSCustomObject and export as a CSV to the 
+    $workflowList | ForEach-Object { [PSCustomObject]$_} | Export-Csv -Path ./Repos-with-Actions-Workflows.csv
+}
